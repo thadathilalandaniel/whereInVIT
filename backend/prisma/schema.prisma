@@ -1,0 +1,222 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum VenueCategory {
+  ACADEMIC_BLOCK
+  MENS_HOSTEL
+  LADIES_HOSTEL
+  FOOD_DINING
+  SPORTS_FITNESS
+  CAMPUS_SPOT
+  LIBRARY
+}
+
+enum ItemType {
+  LOST
+  FOUND
+}
+
+enum ItemStatus {
+  ACTIVE
+  CLAIM_PENDING
+  CLAIMED
+  HANDOFF_PENDING
+  RETURNED
+  RESOLVED
+}
+
+enum ClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum HandoffCheckpoint {
+  SJT_GROUND_FLOOR_RECEPTION
+  CENTRAL_LIBRARY_SECURITY_DESK
+}
+
+enum HandoffStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum NotificationType {
+  ITEM_CLAIMED
+  CLAIM_APPROVED
+  CLAIM_REJECTED
+  MESSAGE_RECEIVED
+  HANDOFF_SCHEDULED
+  HANDOFF_COMPLETED
+  SYSTEM
+}
+
+model Profile {
+  id                 String   @id @default(uuid())
+  name               String
+  registrationNumber String?  @unique
+  email              String   @unique
+  phone              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  reportedItems Item[]
+  claims        Claim[]
+  messages      Message[]
+  notifications Notification[]
+}
+
+model Venue {
+  id        String        @id @default(uuid())
+  category  VenueCategory
+  name      String        @unique
+  isActive  Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  items Item[]
+
+  @@index([category])
+  @@index([isActive])
+  @@index([category, isActive])
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items Item[]
+
+  @@index([isActive])
+}
+
+model Item {
+  id          String     @id @default(uuid())
+  reporterId  String
+  type        ItemType
+  title       String
+  categoryId  String
+  venueId     String
+  description String
+  imageUrl    String?
+  status      ItemStatus @default(ACTIVE)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  reporter              Profile                @relation(fields: [reporterId], references: [id], onDelete: Restrict)
+  category              Category               @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  venue                 Venue                  @relation(fields: [venueId], references: [id], onDelete: Restrict)
+  claims                Claim[]
+  verificationChallenge VerificationChallenge?
+  conversations         Conversation[]
+
+  @@index([type])
+  @@index([status])
+  @@index([categoryId])
+  @@index([venueId])
+  @@index([createdAt])
+}
+
+model Claim {
+  id                     String      @id @default(uuid())
+  itemId                 String
+  claimantId             String
+  verificationAnswerHash String
+  status                 ClaimStatus @default(PENDING)
+  createdAt              DateTime    @default(now())
+  reviewedAt             DateTime?
+
+  item         Item          @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  claimant     Profile       @relation(fields: [claimantId], references: [id], onDelete: Restrict)
+  conversation Conversation?
+  handoff      Handoff?
+
+  @@index([itemId])
+  @@index([claimantId])
+  @@index([status])
+  @@index([itemId, claimantId, status])
+}
+
+model VerificationChallenge {
+  id         String   @id @default(uuid())
+  itemId     String   @unique
+  question   String
+  answerHash String
+  createdAt  DateTime @default(now())
+
+  item Item @relation(fields: [itemId], references: [id], onDelete: Restrict)
+}
+
+model Conversation {
+  id        String   @id @default(uuid())
+  itemId    String
+  claimId   String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  item     Item      @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  claim    Claim     @relation(fields: [claimId], references: [id], onDelete: Restrict)
+  messages Message[]
+
+  @@index([itemId])
+}
+
+model Message {
+  id             String    @id @default(uuid())
+  conversationId String
+  senderId       String
+  message        String
+  createdAt      DateTime  @default(now())
+  readAt         DateTime?
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Restrict)
+  sender       Profile      @relation(fields: [senderId], references: [id], onDelete: Restrict)
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([conversationId, createdAt])
+}
+
+model Handoff {
+  id          String            @id @default(uuid())
+  claimId     String            @unique
+  checkpoint  HandoffCheckpoint
+  handoffDate DateTime
+  handoffTime String
+  status      HandoffStatus     @default(PENDING)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  claim Claim @relation(fields: [claimId], references: [id], onDelete: Restrict)
+
+  @@index([status])
+  @@index([handoffDate])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user Profile @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([userId, isRead])
+}
