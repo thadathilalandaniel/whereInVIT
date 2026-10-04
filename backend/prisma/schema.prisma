@@ -73,6 +73,20 @@ model Profile {
   claims        Claim[]
   messages      Message[]
   notifications Notification[]
+  sessions      Session[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  profileId String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@index([tokenHash])
 }
 
 model Venue {
