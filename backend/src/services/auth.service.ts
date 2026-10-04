@@ -20,11 +20,24 @@ export class AuthService {
 
     const payload = ticket.getPayload();
     if (!payload) {
-      throw new Error('Invalid Google token');
+      throw new Error('Invalid Google token payload');
     }
 
-    const email = payload.email || '';
-    if (!email.endsWith('@vitstudent.ac.in')) {
+    if (
+      payload.iss !== 'accounts.google.com' &&
+      payload.iss !== 'https://accounts.google.com'
+    ) {
+      throw new Error('Invalid token issuer');
+    }
+
+    if (!payload.email_verified) {
+      throw new Error('Google email is not verified');
+    }
+
+    const email = payload.email?.trim().toLowerCase() || '';
+    const domain = email.split('@')[1];
+
+    if (domain !== 'vitstudent.ac.in') {
       throw new Error('Only @vitstudent.ac.in emails are allowed');
     }
 
