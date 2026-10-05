@@ -16,7 +16,7 @@ export default function Home() {
 
   const checkAuth = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/auth/me', {
+      const res = await fetch('http://localhost:5001/api/auth/me', {
         credentials: 'include',
       });
       if (res.ok) {
@@ -40,7 +40,7 @@ export default function Home() {
     try {
       setError(null);
       setLoading(true);
-      const res = await fetch('http://localhost:5000/api/auth/google', {
+      const res = await fetch('http://localhost:5001/api/auth/google', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -66,7 +66,7 @@ export default function Home() {
   const handleLogout = async () => {
     try {
       setLoading(true);
-      await fetch('http://localhost:5000/api/auth/logout', {
+      await fetch('http://localhost:5001/api/auth/logout', {
         method: 'POST',
         credentials: 'include',
       });
