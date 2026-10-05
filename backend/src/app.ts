@@ -1,6 +1,7 @@
 import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { env } from './config/env';
 import routes from './routes';
 import { errorHandler } from './middleware/error.middleware';
@@ -17,6 +18,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // Routes
 app.use('/api', routes);
