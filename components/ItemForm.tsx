@@ -1,13 +1,17 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { fetchApi } from '../lib/api';
 
 export function ItemForm({ initialData, isEdit }: { initialData?: any; isEdit?: boolean }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const queryType = searchParams.get('type');
+  const defaultType = queryType === 'FOUND' ? 'FOUND' : 'LOST';
+
   const [categories, setCategories] = useState<any[]>([]);
   const [venues, setVenues] = useState<any[]>([]);
-  const [type, setType] = useState(initialData?.type || 'LOST');
+  const [type, setType] = useState(initialData?.type || defaultType);
   const [title, setTitle] = useState(initialData?.title || '');
   const [categoryId, setCategoryId] = useState(initialData?.categoryId || '');
   const [venueId, setVenueId] = useState(initialData?.venueId || '');

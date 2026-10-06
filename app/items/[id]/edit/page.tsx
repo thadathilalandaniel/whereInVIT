@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { fetchApi } from '../../../../lib/api';
 import { useAuth } from '../../../../components/AuthProvider';
@@ -81,7 +81,9 @@ export default function EditItemPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <ItemForm initialData={item} isEdit={true} />
+      <Suspense fallback={<div className="text-center p-8">Loading form...</div>}>
+        <ItemForm initialData={item} isEdit={true} />
+      </Suspense>
     </div>
   );
 }

@@ -1,123 +1,95 @@
 'use client';
-
-import { useEffect, useState } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
-
-interface Profile {
-  id: string;
-  name: string;
-  email: string;
-}
+import { useAuth } from '../components/AuthProvider';
+import Link from 'next/link';
+import { useState } from 'react';
+import { fetchApi } from '../lib/api';
 
 export default function Home() {
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const checkAuth = async () => {
-    try {
-      const res = await fetch('http://localhost:5001/api/auth/me', {
-        credentials: 'include',
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setProfile(data.profile);
-      } else {
-        setProfile(null);
-      }
-    } catch (err) {
-      console.error('Failed to check auth', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
+  const { profile, loading, refreshAuth } = useAuth();
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
     try {
-      setError(null);
-      setLoading(true);
-      const res = await fetch('http://localhost:5001/api/auth/google', {
+      setAuthError(null);
+      await fetchApi('/auth/google', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
         body: JSON.stringify({ credential: credentialResponse.credential }),
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Authentication failed');
-      }
-
-      setProfile(data.profile);
+      await refreshAuth();
     } catch (err: any) {
-      setError(err.message || 'An error occurred during login');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      setLoading(true);
-      await fetch('http://localhost:5001/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      });
-      setProfile(null);
-    } catch (err) {
-      console.error('Failed to logout', err);
-    } finally {
-      setLoading(false);
+      setAuthError(err.message || 'An error occurred during login');
     }
   };
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <p className="text-xl">Signing in...</p>
+      <div className="flex flex-col items-center justify-center flex-grow">
+        <div className="animate-pulse h-12 w-12 bg-[#a3e635] rounded-full"></div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
-      <div className="p-8 bg-white rounded-lg shadow-md max-w-md w-full text-center">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">whereInVIT</h1>
-        <p className="text-gray-600 mb-8">Lost it? Find where it is in VIT.</p>
+    <div className="flex flex-col items-center justify-center flex-grow px-4 sm:px-6 py-12">
+      <div className="p-8 bg-white rounded-xl shadow-lg max-w-2xl w-full text-center border border-gray-100">
+        <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">whereIn<span className="text-[#84cc16]">VIT</span></h1>
+        <p className="text-lg text-gray-600 mb-10 max-w-lg mx-auto">
+          The official campus Lost & Found platform. <br className="hidden sm:block" />
+          Lost it? Find where it is in VIT.
+        </p>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded text-sm">
-            {error}
+        {authError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+            {authError}
           </div>
         )}
 
         {profile ? (
-          <div>
-            <p className="text-lg font-medium text-gray-800">Welcome, {profile.name}</p>
-            <p className="text-gray-500 mb-6">{profile.email}</p>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
-            >
-              Logout
-            </button>
+          <div className="animate-fade-in-up">
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome back, {profile.name.split(' ')[0]}!</h2>
+            <p className="text-gray-500 mb-8">{profile.email}</p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Link 
+                href="/items/new?type=LOST" 
+                className="flex items-center justify-center px-6 py-4 border-2 border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#1a1a1a] hover:bg-[#333] transition-colors"
+              >
+                Report Lost Item
+              </Link>
+              <Link 
+                href="/items/new?type=FOUND" 
+                className="flex items-center justify-center px-6 py-4 border-2 border-[#1a1a1a] rounded-lg shadow-sm text-base font-medium text-[#1a1a1a] bg-white hover:bg-gray-50 transition-colors"
+              >
+                Report Found Item
+              </Link>
+              <Link 
+                href="/lost" 
+                className="flex items-center justify-center px-6 py-4 border border-gray-200 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+              >
+                Browse Lost Feed
+              </Link>
+              <Link 
+                href="/found" 
+                className="flex items-center justify-center px-6 py-4 border border-gray-200 rounded-lg shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+              >
+                Browse Found Feed
+              </Link>
+            </div>
           </div>
         ) : (
-          <div className="flex justify-center">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() => {
-                setError('Google authentication cancelled or failed');
-              }}
-              useOneTap
-            />
+          <div className="flex flex-col items-center">
+            <p className="text-sm text-gray-500 mb-6 font-medium">Please sign in with your VIT student account to continue</p>
+            <div className="inline-block transform transition hover:scale-105 duration-200">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setAuthError('Google authentication cancelled or failed')}
+                useOneTap
+                theme="outline"
+                size="large"
+                shape="rectangular"
+              />
+            </div>
           </div>
         )}
       </div>
