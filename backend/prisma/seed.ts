@@ -3,12 +3,37 @@ import { PrismaClient, VenueCategory } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const categories = [
-  'ID Cards',
-  'Room Keys',
+  'ID & Access Cards',
+  'Keys',
+  'Wallets & Card Holders',
+  'Smartphones',
+  'Books',
+  'Bags & Backpacks',
+  'Earphones & Headphones',
+  'Chargers & Cables',
   'Calculators',
+  'Laptops & Tablets',
+  'Water Bottles & Flasks',
+  'Spectacles',
+  'Stationery',
+  'USB & Storage Devices',
+  'Clothing',
+  'Sports Equipment',
   'Lab Equipment',
-  'Earphones',
-  'Wallets'
+  'Electronic Components',
+  'Documents & Certificates',
+  'Cash & Cards',
+  'Laptop Accessories',
+  'Mobile Accessories',
+  'Smartwatches & Wearables',
+  'Umbrellas',
+  'Footwear',
+  'Jewellery & Accessories',
+  'Gym Equipment & Accessories',
+  'Musical Instruments',
+  'Hostel Items',
+  'Personal Care Items',
+  'Other'
 ];
 
 const venues = [
