@@ -16,7 +16,22 @@ export function ItemsFeed({ type }: { type: 'LOST' | 'FOUND' }) {
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    Promise.all([fetchApi('/categories').catch(() => []), fetchApi('/venues').catch(() => [])]).then(([cats, vens]) => { setCategories(cats || []); setVenues(vens || []); });
+    const extractArray = (res: any) => {
+      if (Array.isArray(res)) return res;
+      if (res && Array.isArray(res.data)) return res.data;
+      if (res && Array.isArray(res.items)) return res.items;
+      return [];
+    };
+
+    Promise.all([
+      fetchApi('/categories').catch(() => []),
+      fetchApi('/venues').catch(() => [])
+    ]).then(([cats, vens]) => {
+      const parsedCats = extractArray(cats);
+      const parsedVens = extractArray(vens);
+      setCategories(parsedCats);
+      setVenues(parsedVens);
+    });
   }, []);
 
   useEffect(() => { fetchItems(); }, [type, search, category, venue, page]);
@@ -30,7 +45,9 @@ export function ItemsFeed({ type }: { type: 'LOST' | 'FOUND' }) {
       if (venue) query.append('venueId', venue);
       
       const res = await fetchApi(`/items?${query.toString()}`);
-      setItems(res.items || []); setTotalPages(res.pagination?.totalPages || 1); setError(null);
+      setItems(Array.isArray(res?.items) ? res.items : []);
+      setTotalPages(res?.pagination?.totalPages || 1); 
+      setError(null);
     } catch (err: any) { setError(err.message || 'Failed to load items'); } finally { setLoading(false); }
   };
 

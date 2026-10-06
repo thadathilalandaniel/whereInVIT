@@ -17,11 +17,21 @@ export function ItemForm({ initialData, isEdit }: { initialData?: any; isEdit?: 
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const extractArray = (res: any) => {
+      if (Array.isArray(res)) return res;
+      if (res && Array.isArray(res.data)) return res.data;
+      if (res && Array.isArray(res.items)) return res.items;
+      return [];
+    };
+
     Promise.all([fetchApi('/categories').catch(() => []), fetchApi('/venues').catch(() => [])])
       .then(([cats, vens]) => {
-        setCategories(cats || []); setVenues(vens || []);
-        if (!categoryId && cats && cats.length > 0) setCategoryId(cats[0].id);
-        if (!venueId && vens && vens.length > 0) setVenueId(vens[0].id);
+        const parsedCats = extractArray(cats);
+        const parsedVens = extractArray(vens);
+        setCategories(parsedCats); 
+        setVenues(parsedVens);
+        if (!categoryId && parsedCats && parsedCats.length > 0) setCategoryId(parsedCats[0].id);
+        if (!venueId && parsedVens && parsedVens.length > 0) setVenueId(parsedVens[0].id);
       });
   }, []);
 
