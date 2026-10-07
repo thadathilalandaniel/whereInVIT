@@ -1,4 +1,5 @@
 import express, { Application } from 'express';
+import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -22,6 +23,9 @@ app.use(cookieParser());
 
 // Routes
 app.use('/api', routes);
+
+// Serve uploads folder for images
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Error handlers
 app.use(notFoundHandler);

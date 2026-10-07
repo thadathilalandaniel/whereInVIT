@@ -2,9 +2,11 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
+  const isFormData = options.body instanceof FormData;
+  const headers = isFormData ? { ...options.headers } : { 'Content-Type': 'application/json', ...options.headers };
   const defaultOptions: RequestInit = {
     ...options,
-    headers: { 'Content-Type': 'application/json', ...options.headers },
+    headers,
   };
   if (typeof window !== 'undefined') {
     defaultOptions.credentials = 'include';

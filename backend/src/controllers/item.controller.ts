@@ -59,7 +59,12 @@ export class ItemController {
   static async createItem(req: Request, res: Response) {
     try {
       const reporterId = req.user.id;
-      const { type, title, categoryId, venueId, description, imageUrl } = req.body;
+      const { type, title, categoryId, venueId, description } = req.body;
+      let imageUrl = req.body.imageUrl;
+      if (req.file) {
+        const baseUrl = req.protocol + '://' + req.get('host');
+        imageUrl = baseUrl + '/uploads/items/' + req.file.filename;
+      }
 
       if (!type || (type !== ItemType.LOST && type !== ItemType.FOUND)) {
         return res.status(400).json({ error: 'Valid type (LOST or FOUND) is required' });
@@ -111,7 +116,17 @@ export class ItemController {
     try {
       const { id } = req.params;
       const reporterId = req.user.id;
-      const { title, categoryId, venueId, description, imageUrl, status } = req.body;
+      let imageUrl = req.body.imageUrl;
+      const { title, categoryId, venueId, description, status } = req.body;
+      if (req.file) {
+        const baseUrl = req.protocol + '://' + req.get('host');
+        imageUrl = baseUrl + '/uploads/items/' + req.file.filename;
+      }
+      
+      // Allow removing the image explicitly if client passes imageUrl = 'null' or empty string
+      if (req.body.imageUrl === 'null' || req.body.imageUrl === '') {
+        imageUrl = null;
+      }
 
       if (title && (title.trim().length === 0 || title.length > 100)) {
         return res.status(400).json({ error: 'Title must be under 100 characters' });
