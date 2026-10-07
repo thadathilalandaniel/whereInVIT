@@ -40,6 +40,8 @@ export class ItemService {
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } },
+        { category: { name: { contains: search, mode: 'insensitive' } } },
+        { venue: { name: { contains: search, mode: 'insensitive' } } },
       ];
     }
 
