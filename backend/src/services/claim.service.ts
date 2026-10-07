@@ -76,7 +76,8 @@ export class ClaimService {
             email: true,
             registrationNumber: true
           }
-        }
+        },
+        conversation: { select: { id: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -87,6 +88,9 @@ export class ClaimService {
       where: {
         itemId,
         claimantId
+      },
+      include: {
+        conversation: { select: { id: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -225,6 +229,20 @@ export class ClaimService {
           reviewedAt: new Date()
         }
       });
+
+      // Module 6: Create Conversation on approval
+      const existingConversation = await tx.conversation.findUnique({
+        where: { claimId }
+      });
+
+      if (!existingConversation) {
+        await tx.conversation.create({
+          data: {
+            itemId: claim.itemId,
+            claimId: claimId
+          }
+        });
+      }
 
       return updatedClaim;
     });

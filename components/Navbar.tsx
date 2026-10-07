@@ -50,6 +50,7 @@ export default function Navbar() {
           <div className="hidden md:flex md:items-center">
             {profile ? (
               <div className="flex items-center space-x-10">
+                <Link href="/messages" className="text-xs font-semibold tracking-widest uppercase text-[#555555] hover:text-[#111111] transition-colors">Messages</Link>
                 <Link href="/items/new?type=LOST" className="text-xs font-semibold tracking-widest uppercase text-[#555555] hover:text-[#111111] transition-colors">Report Lost</Link>
                 <Link href="/items/new?type=FOUND" className="text-xs font-semibold tracking-widest uppercase text-[#555555] hover:text-[#111111] transition-colors">Report Found</Link>
                 <div className="flex items-center space-x-8 border-l border-[#E5E5E5] pl-8">
@@ -105,6 +106,7 @@ export default function Navbar() {
                 <div className="text-sm text-[#555555]">{profile.email}</div>
               </div>
               <div className="space-y-4">
+                <Link href="/messages" onClick={() => setMobileMenuOpen(false)} className="block text-xs font-semibold tracking-widest uppercase text-[#555555] hover:text-[#111111]">Messages</Link>
                 <Link href="/items/new?type=LOST" onClick={() => setMobileMenuOpen(false)} className="block text-xs font-semibold tracking-widest uppercase text-[#555555] hover:text-[#111111]">Report Lost</Link>
                 <Link href="/items/new?type=FOUND" onClick={() => setMobileMenuOpen(false)} className="block text-xs font-semibold tracking-widest uppercase text-[#555555] hover:text-[#111111]">Report Found</Link>
                 <button onClick={() => { logout(); setMobileMenuOpen(false); }} className="block pt-4 mt-2 w-full text-left text-xs font-bold tracking-widest uppercase text-[#111111] hover:text-[#555555] border-t border-[#E5E5E5]">Logout</button>

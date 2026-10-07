@@ -5,6 +5,7 @@ import categoryRoutes from './category.routes';
 import itemRoutes from './item.routes';
 import authRoutes from './auth.routes';
 import claimRoutes from './claim.routes';
+import conversationRoutes from './conversation.routes';
 
 const router = Router();
 
@@ -15,5 +16,6 @@ router.use('/venues', venueRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/items', itemRoutes);
 router.use('/claims', claimRoutes);
+router.use('/conversations', conversationRoutes);
 
 export default router;
