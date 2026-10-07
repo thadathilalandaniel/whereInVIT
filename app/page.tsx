@@ -56,7 +56,7 @@ export default function Home() {
       <section className="w-full min-h-[85vh] flex flex-col items-center justify-center pt-32 pb-20 px-6 relative bg-white border-b border-[#E5E5E5]">
         <div className="max-w-[1600px] w-full mx-auto flex flex-col items-center text-center">
           <p className="text-[#111111] text-xs font-bold tracking-[0.4em] mb-12 uppercase">whereInVIT</p>
-          <h1 className="text-7xl md:text-8xl lg:text-[10rem] font-extrabold text-[#111111] tracking-tighter leading-[0.85] mb-10">
+          <h1 className="text-6xl md:text-7xl lg:text-9xl font-extrabold text-[#111111] tracking-tighter leading-[0.85] mb-10">
             LOST IT?<br />FIND IT.
           </h1>
           <p className="text-[#555555] text-lg md:text-xl font-medium tracking-wide max-w-xl mb-16 leading-relaxed">
