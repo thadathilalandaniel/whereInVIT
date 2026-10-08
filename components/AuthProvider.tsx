@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { fetchApi } from '../lib/api';
 
-interface Profile { id: string; name: string; email: string; }
+interface Profile { id: string; name: string; email: string; role?: string; }
 interface AuthContextType { profile: Profile | null; loading: boolean; refreshAuth: () => Promise<void>; logout: () => Promise<void>; }
 
 const AuthContext = createContext<AuthContextType>({ profile: null, loading: true, refreshAuth: async () => {}, logout: async () => {} });

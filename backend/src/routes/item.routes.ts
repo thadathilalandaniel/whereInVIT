@@ -27,4 +27,7 @@ router.get('/:itemId/my-claim', requireAuth, ClaimController.getMyClaim);
 import { HandoffController } from '../controllers/handoff.controller';
 router.patch('/:id/resolve', requireAuth, HandoffController.resolveItem);
 
+// Report item
+router.post('/:id/report', requireAuth, ItemController.reportItem);
+
 export default router;

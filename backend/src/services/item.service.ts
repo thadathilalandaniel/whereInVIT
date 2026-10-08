@@ -1,4 +1,4 @@
-import { ItemType, ItemStatus, Prisma } from '@prisma/client';
+import { ItemType, ItemStatus, Prisma, ReportReason } from '@prisma/client';
 import { prisma } from '../utils/prisma';
 
 interface FindItemsParams {
@@ -26,6 +26,10 @@ export class ItemService {
     const where: Prisma.ItemWhereInput = {
       status,
     };
+
+    if (status === 'REMOVED' as ItemStatus) {
+      throw new Error('Unauthorized status filter');
+    }
 
     if (type) {
       where.type = type;
@@ -190,6 +194,31 @@ export class ItemService {
 
     return prisma.item.delete({
       where: { id }
+    });
+  }
+
+  static async reportItem(reporterId: string, itemId: string, reason: ReportReason, description: string) {
+    const item = await prisma.item.findUnique({ where: { id: itemId } });
+    if (!item) {
+      throw new Error('Item not found');
+    }
+
+    // Check for duplicate reports
+    const existingReport = await prisma.report.findFirst({
+      where: { reporterId, itemId, status: 'PENDING' }
+    });
+
+    if (existingReport) {
+      throw new Error('You have already reported this item and it is pending review.');
+    }
+
+    return prisma.report.create({
+      data: {
+        reporterId,
+        itemId,
+        reason,
+        description
+      }
     });
   }
 }

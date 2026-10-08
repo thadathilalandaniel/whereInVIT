@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { ItemService } from '../services/item.service';
-import { ItemType, ItemStatus } from '@prisma/client';
+import { ItemType, ItemStatus, ReportReason } from '@prisma/client';
 import { prisma } from '../utils/prisma';
 
 export class ItemController {
@@ -175,6 +175,28 @@ export class ItemController {
       if (error.message === 'Unauthorized') return res.status(403).json({ error: error.message });
       if (error.message === 'Cannot delete an item that is in progress') return res.status(400).json({ error: error.message });
       res.status(500).json({ error: 'Failed to delete item' });
+    }
+  }
+
+  static async reportItem(req: Request, res: Response) {
+    try {
+      const reporterId = req.user.id;
+      const itemId = req.params.id as string;
+      const { reason, description } = req.body;
+
+      if (!Object.values(ReportReason).includes(reason as ReportReason)) {
+        return res.status(400).json({ error: 'Invalid report reason' });
+      }
+      if (!description || description.trim().length === 0) {
+        return res.status(400).json({ error: 'Description is required' });
+      }
+
+      const report = await ItemService.reportItem(reporterId, itemId, reason as ReportReason, description);
+      res.status(201).json(report);
+    } catch (error: any) {
+      console.error('Error reporting item:', error);
+      if (error.message.includes('not found')) return res.status(404).json({ error: error.message });
+      res.status(400).json({ error: error.message });
     }
   }
 }

@@ -8,6 +8,7 @@ import claimRoutes from './claim.routes';
 import handoffRoutes from './handoff.routes';
 import conversationRoutes from './conversation.routes';
 import notificationRoutes from './notification.routes';
+import adminRoutes from './admin.routes';
 
 const router = Router();
 
@@ -21,5 +22,6 @@ router.use('/claims', claimRoutes);
 router.use('/handoffs', handoffRoutes);
 router.use('/conversations', conversationRoutes);
 router.use('/notifications', notificationRoutes);
+router.use('/admin', adminRoutes);
 
 export default router;
