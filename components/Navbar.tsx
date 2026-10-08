@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useAuth } from './AuthProvider';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import { fetchApi } from '../lib/api';
 
@@ -10,6 +10,24 @@ export default function Navbar() {
   const { profile, logout, refreshAuth } = useAuth();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (profile) {
+      const fetchUnreadCount = async () => {
+        try {
+          const res = await fetchApi('/notifications/unread-count');
+          setUnreadCount(res.unreadCount || 0);
+        } catch (error) {
+          console.error('Failed to fetch unread count', error);
+        }
+      };
+      fetchUnreadCount();
+      // Optionally could set up an interval here, but sticking to simple fetch on mount/profile change
+    } else {
+      setUnreadCount(0);
+    }
+  }, [profile]);
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
     try {
@@ -50,6 +68,14 @@ export default function Navbar() {
           <div className="hidden md:flex md:items-center">
             {profile ? (
               <div className="flex items-center space-x-10">
+                <Link href="/notifications" className="relative text-xs font-semibold tracking-widest uppercase text-[#555555] hover:text-[#111111] transition-colors">
+                  Notifications
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-3 -right-4 bg-black text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
                 <Link href="/messages" className="text-xs font-semibold tracking-widest uppercase text-[#555555] hover:text-[#111111] transition-colors">Messages</Link>
                 <Link href="/items/new?type=LOST" className="text-xs font-semibold tracking-widest uppercase text-[#555555] hover:text-[#111111] transition-colors">Report Lost</Link>
                 <Link href="/items/new?type=FOUND" className="text-xs font-semibold tracking-widest uppercase text-[#555555] hover:text-[#111111] transition-colors">Report Found</Link>
@@ -106,6 +132,14 @@ export default function Navbar() {
                 <div className="text-sm text-[#555555]">{profile.email}</div>
               </div>
               <div className="space-y-4">
+                <Link href="/notifications" onClick={() => setMobileMenuOpen(false)} className="flex items-center justify-between text-xs font-semibold tracking-widest uppercase text-[#555555] hover:text-[#111111]">
+                  Notifications
+                  {unreadCount > 0 && (
+                    <span className="bg-black text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
                 <Link href="/messages" onClick={() => setMobileMenuOpen(false)} className="block text-xs font-semibold tracking-widest uppercase text-[#555555] hover:text-[#111111]">Messages</Link>
                 <Link href="/items/new?type=LOST" onClick={() => setMobileMenuOpen(false)} className="block text-xs font-semibold tracking-widest uppercase text-[#555555] hover:text-[#111111]">Report Lost</Link>
                 <Link href="/items/new?type=FOUND" onClick={() => setMobileMenuOpen(false)} className="block text-xs font-semibold tracking-widest uppercase text-[#555555] hover:text-[#111111]">Report Found</Link>

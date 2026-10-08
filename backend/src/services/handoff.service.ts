@@ -1,8 +1,9 @@
-import { HandoffStatus, ItemStatus, Prisma, HandoffCheckpoint } from '@prisma/client';
+import { HandoffStatus, ItemStatus, Prisma, HandoffCheckpoint, NotificationType } from '@prisma/client';
 import { prisma } from '../utils/prisma';
+import { NotificationService } from './notification.service';
 
 export class HandoffService {
-  static async createHandoff(claimId: string, checkpoint: HandoffCheckpoint, handoffDate: Date, handoffTime: string) {
+  static async createHandoff(claimId: string, checkpoint: HandoffCheckpoint, handoffDate: Date, handoffTime: string, initiatorId: string) {
     const claim = await prisma.claim.findUnique({
       where: { id: claimId },
       include: { item: true },
@@ -57,6 +58,14 @@ export class HandoffService {
         data: { status: 'HANDOFF_PENDING' },
       });
 
+      const recipientId = claim.item.reporterId === initiatorId ? claim.claimantId : claim.item.reporterId;
+      await NotificationService.createNotification({
+        userId: recipientId,
+        type: NotificationType.HANDOFF_SCHEDULED,
+        title: 'Handoff Scheduled',
+        message: `A handoff has been scheduled for '${claim.item.title}'.`
+      }, tx);
+
       return handoff;
     });
   }
@@ -86,7 +95,7 @@ export class HandoffService {
     });
   }
 
-  static async completeHandoff(handoffId: string) {
+  static async completeHandoff(handoffId: string, initiatorId: string) {
     const handoff = await prisma.handoff.findUnique({
       where: { id: handoffId },
       include: { claim: true },
@@ -110,6 +119,16 @@ export class HandoffService {
         where: { id: handoff.claim.itemId },
         data: { status: 'RETURNED' },
       });
+
+      const item = await tx.item.findUnique({ where: { id: handoff.claim.itemId } });
+      const recipientId = item!.reporterId === initiatorId ? handoff.claim.claimantId : item!.reporterId;
+
+      await NotificationService.createNotification({
+        userId: recipientId,
+        type: NotificationType.HANDOFF_COMPLETED,
+        title: 'Handoff Completed',
+        message: `The handoff for '${item!.title}' has been completed.`
+      }, tx);
 
       return updatedHandoff;
     });

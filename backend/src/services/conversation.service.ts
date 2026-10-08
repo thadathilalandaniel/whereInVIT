@@ -1,5 +1,6 @@
 import { prisma } from '../utils/prisma';
 import { ClaimStatus } from '@prisma/client';
+import { NotificationService } from './notification.service';
 
 export class ConversationService {
   /**
@@ -146,10 +147,20 @@ export class ConversationService {
       });
 
       // Update conversation updatedAt
-      await tx.conversation.update({
+      const updatedConv = await tx.conversation.update({
         where: { id: conversationId },
-        data: { updatedAt: new Date() }
+        data: { updatedAt: new Date() },
+        include: { item: true, claim: true }
       });
+
+      const recipientId = updatedConv.item.reporterId === senderId ? updatedConv.claim.claimantId : updatedConv.item.reporterId;
+
+      await NotificationService.createNotification({
+        userId: recipientId,
+        type: 'MESSAGE_RECEIVED',
+        title: 'New Message',
+        message: `You received a new message about '${updatedConv.item.title}'.`
+      }, tx);
 
       return message;
     });

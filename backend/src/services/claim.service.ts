@@ -1,5 +1,6 @@
 import { prisma } from '../utils/prisma';
-import { ClaimStatus, ItemStatus, ItemType } from '@prisma/client';
+import { ClaimStatus, ItemStatus, ItemType, NotificationType } from '@prisma/client';
+import { NotificationService } from './notification.service';
 import bcrypt from 'bcryptjs';
 
 export class ClaimService {
@@ -154,6 +155,13 @@ export class ClaimService {
         });
       }
 
+      await NotificationService.createNotification({
+        userId: item.reporterId,
+        type: NotificationType.ITEM_CLAIMED,
+        title: 'Claim Received',
+        message: `Someone submitted a claim for your found item '${item.title}'.`
+      }, tx);
+
       return claim;
     });
   }
@@ -244,6 +252,13 @@ export class ClaimService {
         });
       }
 
+      await NotificationService.createNotification({
+        userId: claim.claimantId,
+        type: NotificationType.CLAIM_APPROVED,
+        title: 'Claim Approved',
+        message: `Your claim for '${claim.item.title}' was approved.`
+      }, tx);
+
       return updatedClaim;
     });
   }
@@ -278,6 +293,13 @@ export class ClaimService {
           data: { status: ItemStatus.ACTIVE }
         });
       }
+
+      await NotificationService.createNotification({
+        userId: claim.claimantId,
+        type: NotificationType.CLAIM_REJECTED,
+        title: 'Claim Rejected',
+        message: `Your claim for '${claim.item.title}' was rejected.`
+      }, tx);
 
       return updatedClaim;
     });

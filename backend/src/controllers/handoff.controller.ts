@@ -36,7 +36,7 @@ export class HandoffController {
       }
 
       const parsedDate = new Date(handoffDate);
-      const handoff = await HandoffService.createHandoff(claimId, checkpoint, parsedDate, handoffTime);
+      const handoff = await HandoffService.createHandoff(claimId, checkpoint, parsedDate, handoffTime, userId);
 
       res.status(201).json(handoff);
     } catch (error: any) {
@@ -121,7 +121,7 @@ export class HandoffController {
         return res.status(403).json({ error: 'Unauthorized to complete this handoff' });
       }
 
-      const updatedHandoff = await HandoffService.completeHandoff(handoffId);
+      const updatedHandoff = await HandoffService.completeHandoff(handoffId, userId);
       res.json(updatedHandoff);
     } catch (error: any) {
       console.error('Error completing handoff:', error);
