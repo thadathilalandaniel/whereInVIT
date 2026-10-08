@@ -275,10 +275,13 @@ export default function ItemDetailsPage() {
                           {myClaim.status === 'REJECTED' && 'REJECTED'}
                           {myClaim.status === 'CANCELLED' && 'CANCELLED'}
                         </h3>
-                        {myClaim.status === 'APPROVED' && <p className="text-xs text-[#555555] mt-2">The finder approved your claim. Wait for messaging to be unlocked.</p>}
+                        {myClaim.status === 'APPROVED' && <p className="text-xs text-[#555555] mt-2">The finder approved your claim. You can now coordinate handoff.</p>}
                       </div>
                       {myClaim.status === 'PENDING' && (
                         <Button className="w-full sm:w-auto" variant="secondary" onClick={() => handleCancelClaim(myClaim.id)}>Cancel Claim</Button>
+                      )}
+                      {myClaim.status === 'APPROVED' && myClaim.conversation && (
+                        <Button className="w-full sm:w-auto" onClick={() => router.push(`/messages/${myClaim.conversation.id}`)}>Message Finder</Button>
                       )}
                     </div>
                   ) : (
@@ -302,6 +305,8 @@ export default function ItemDetailsPage() {
                     </div>
                     {!challenge ? (
                       <Button className="w-full sm:w-auto" onClick={() => setShowChallengeModal(true)}>Set Challenge</Button>
+                    ) : item.status === 'CLAIMED' ? (
+                      <a href="#manage-claims" className="inline-block px-6 py-3 text-xs font-bold tracking-[0.2em] uppercase transition-colors border text-center bg-[#111111] text-white border-[#111111] hover:bg-[#333333]">Message Claimant</a>
                     ) : (
                       <a href="#manage-claims" className="inline-block px-6 py-3 text-xs font-bold tracking-[0.2em] uppercase transition-colors border text-center bg-[#111111] text-white border-[#111111] hover:bg-[#333333]">View Claims</a>
                     )}
@@ -429,6 +434,11 @@ export default function ItemDetailsPage() {
                             <div className="flex gap-3 w-full md:w-auto">
                               <Button className="flex-1 md:flex-none" onClick={() => handleApproveClaim(claim.id)}>Approve</Button>
                               <Button className="flex-1 md:flex-none" variant="secondary" onClick={() => handleRejectClaim(claim.id)}>Reject</Button>
+                            </div>
+                          )}
+                          {claim.status === 'APPROVED' && claim.conversation && (
+                            <div className="flex gap-3 w-full md:w-auto mt-4 md:mt-0">
+                              <Button className="flex-1 md:flex-none" onClick={() => router.push(`/messages/${claim.conversation.id}`)}>Open Chat</Button>
                             </div>
                           )}
                         </div>

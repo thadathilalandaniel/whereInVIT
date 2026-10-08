@@ -6,6 +6,7 @@ import itemRoutes from './item.routes';
 import authRoutes from './auth.routes';
 import claimRoutes from './claim.routes';
 import handoffRoutes from './handoff.routes';
+import conversationRoutes from './conversation.routes';
 
 const router = Router();
 
@@ -17,5 +18,6 @@ router.use('/categories', categoryRoutes);
 router.use('/items', itemRoutes);
 router.use('/claims', claimRoutes);
 router.use('/handoffs', handoffRoutes);
+router.use('/conversations', conversationRoutes);
 
 export default router;
