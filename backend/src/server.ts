@@ -1,12 +1,16 @@
 import app from './app';
 import { env } from './config/env';
 import { prisma } from './utils/prisma';
+import { bootstrapDatabase } from './utils/seed';
 
 const startServer = async () => {
   try {
     // Check database connection
     await prisma.$connect();
     console.log('Connected to PostgreSQL database');
+
+    // Bootstrap data if missing (especially in production environments)
+    await bootstrapDatabase();
 
     const port = env.PORT;
     app.listen(Number(port), '0.0.0.0', () => {

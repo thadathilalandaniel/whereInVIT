@@ -28,6 +28,9 @@ export function ItemForm({ initialData, isEdit }: { initialData?: any; isEdit?: 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [loadingData, setLoadingData] = useState(true);
+  const [dataError, setDataError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!isEdit && (queryType === 'LOST' || queryType === 'FOUND')) {
       setType(queryType);
@@ -42,14 +45,25 @@ export function ItemForm({ initialData, isEdit }: { initialData?: any; isEdit?: 
       return [];
     };
 
-    Promise.all([fetchApi('/categories').catch(() => []), fetchApi('/venues').catch(() => [])])
+    Promise.all([
+      fetchApi('/categories').catch(() => null),
+      fetchApi('/venues').catch(() => null)
+    ])
       .then(([cats, vens]) => {
-        const parsedCats = extractArray(cats);
-        const parsedVens = extractArray(vens);
-        setCategories(parsedCats); 
-        setVenues(parsedVens);
-        if (!categoryId && parsedCats && parsedCats.length > 0) setCategoryId(parsedCats[0].id);
-        if (!venueId && parsedVens && parsedVens.length > 0) setVenueId(parsedVens[0].id);
+        if (cats === null || vens === null) {
+          setDataError('Unable to load categories and venues. Please refresh the page or try again.');
+        } else {
+          setDataError(null);
+          const parsedCats = extractArray(cats);
+          const parsedVens = extractArray(vens);
+          setCategories(parsedCats); 
+          setVenues(parsedVens);
+          if (!categoryId && parsedCats && parsedCats.length > 0) setCategoryId(parsedCats[0].id);
+          if (!venueId && parsedVens && parsedVens.length > 0) setVenueId(parsedVens[0].id);
+        }
+      })
+      .finally(() => {
+        setLoadingData(false);
       });
   }, [categoryId, venueId]);
 
@@ -164,21 +178,37 @@ export function ItemForm({ initialData, isEdit }: { initialData?: any; isEdit?: 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-[10px] font-bold tracking-[0.2em] text-[#555555] uppercase mb-2">Category</label>
-            <select required 
-              className="w-full border border-[#E5E5E5] bg-[#F7F7F5] rounded-none px-4 py-4 text-[#111111] focus:outline-none focus:border-[#111111] focus:bg-white transition-colors text-sm" 
-              value={categoryId} onChange={e => setCategoryId(e.target.value)}>
-              <option value="" disabled>Select Category</option>
-              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            {loadingData ? (
+              <div className="text-xs text-[#999999] p-4 border border-[#E5E5E5] bg-[#F7F7F5] animate-pulse">Loading categories...</div>
+            ) : dataError ? (
+              <div className="text-xs text-red-600 p-4 border border-red-200 bg-red-50">{dataError}</div>
+            ) : categories.length === 0 ? (
+              <div className="text-xs text-red-600 p-4 border border-red-200 bg-red-50">Unable to load categories. Please try again.</div>
+            ) : (
+              <select required 
+                className="w-full border border-[#E5E5E5] bg-[#F7F7F5] rounded-none px-4 py-4 text-[#111111] focus:outline-none focus:border-[#111111] focus:bg-white transition-colors text-sm" 
+                value={categoryId} onChange={e => setCategoryId(e.target.value)}>
+                <option value="" disabled>Select Category</option>
+                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            )}
           </div>
           <div>
             <label className="block text-[10px] font-bold tracking-[0.2em] text-[#555555] uppercase mb-2">Venue</label>
-            <select required 
-              className="w-full border border-[#E5E5E5] bg-[#F7F7F5] rounded-none px-4 py-4 text-[#111111] focus:outline-none focus:border-[#111111] focus:bg-white transition-colors text-sm" 
-              value={venueId} onChange={e => setVenueId(e.target.value)}>
-              <option value="" disabled>Select Venue</option>
-              {venues.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-            </select>
+            {loadingData ? (
+              <div className="text-xs text-[#999999] p-4 border border-[#E5E5E5] bg-[#F7F7F5] animate-pulse">Loading venues...</div>
+            ) : dataError ? (
+              <div className="text-xs text-red-600 p-4 border border-red-200 bg-red-50">{dataError}</div>
+            ) : venues.length === 0 ? (
+              <div className="text-xs text-red-600 p-4 border border-red-200 bg-red-50">Unable to load venues. Please try again.</div>
+            ) : (
+              <select required 
+                className="w-full border border-[#E5E5E5] bg-[#F7F7F5] rounded-none px-4 py-4 text-[#111111] focus:outline-none focus:border-[#111111] focus:bg-white transition-colors text-sm" 
+                value={venueId} onChange={e => setVenueId(e.target.value)}>
+                <option value="" disabled>Select Venue</option>
+                {venues.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+              </select>
+            )}
           </div>
         </div>
 
