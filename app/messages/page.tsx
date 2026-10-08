@@ -3,14 +3,20 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../components/AuthProvider';
 import { fetchApi } from '../../lib/api';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function MessagesPage() {
-  const { profile } = useAuth();
+  const { profile, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [conversations, setConversations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!authLoading && !profile) {
+      router.push('/login?next=/messages');
+      return;
+    }
     if (!profile) return;
     const loadConversations = async () => {
       try {
@@ -24,12 +30,12 @@ export default function MessagesPage() {
       }
     };
     loadConversations();
-  }, [profile]);
+  }, [profile, authLoading, router]);
 
-  if (!profile) {
+  if (authLoading || !profile) {
     return (
       <div className="w-full min-h-[60vh] flex items-center justify-center bg-[#F7F7F5]">
-        <p className="text-center text-[#555555] text-xs font-bold tracking-[0.2em] uppercase">Please log in to view messages.</p>
+        <p className="text-center text-[#555555] text-xs font-bold tracking-[0.2em] uppercase">Authenticating...</p>
       </div>
     );
   }

@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { useAuth } from './AuthProvider';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { GoogleLogin } from '@react-oauth/google';
 import { fetchApi } from '../lib/api';
 
 export default function Navbar() {
@@ -29,17 +28,6 @@ export default function Navbar() {
     }
   }, [profile]);
 
-  const handleGoogleSuccess = async (credentialResponse: any) => {
-    try {
-      await fetchApi('/auth/google', {
-        method: 'POST',
-        body: JSON.stringify({ credential: credentialResponse.credential }),
-      });
-      await refreshAuth();
-    } catch (err: any) {
-      console.error(err.message || 'An error occurred during login');
-    }
-  };
 
   const navLinks = [
     { name: 'Home', href: '/' },
@@ -88,14 +76,10 @@ export default function Navbar() {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center scale-[0.85] origin-right">
-                <GoogleLogin
-                  onSuccess={handleGoogleSuccess}
-                  onError={() => console.error('Google authentication cancelled')}
-                  useOneTap
-                  theme="outline"
-                  shape="rectangular"
-                />
+              <div className="flex items-center">
+                <Link href="/login" className="text-xs font-bold tracking-[0.2em] uppercase text-[#111111] hover:text-[#555555] transition-colors">
+                  LOGIN
+                </Link>
               </div>
             )}
           </div>
@@ -148,12 +132,9 @@ export default function Navbar() {
             </div>
           ) : (
             <div className="py-8 px-6 border-t border-[#E5E5E5] bg-[#F7F7F5] flex justify-center">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={() => console.error('Google Auth Failed')}
-                useOneTap
-                theme="outline"
-              />
+              <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="text-xs font-bold tracking-[0.2em] uppercase text-[#111111]">
+                LOGIN
+              </Link>
             </div>
           )}
         </div>

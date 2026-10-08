@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function ConversationPage() {
-  const { profile } = useAuth();
+  const { profile, loading: authLoading } = useAuth();
   const { conversationId } = useParams();
   const router = useRouter();
 
@@ -39,6 +39,10 @@ export default function ConversationPage() {
   };
 
   useEffect(() => {
+    if (!authLoading && !profile) {
+      router.push(`/login?next=/messages/${conversationId}`);
+      return;
+    }
     if (profile && conversationId) {
       loadData();
       
@@ -52,7 +56,7 @@ export default function ConversationPage() {
       
       return () => clearInterval(interval);
     }
-  }, [profile, conversationId]);
+  }, [authLoading, profile, conversationId, router]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -78,10 +82,10 @@ export default function ConversationPage() {
     }
   };
 
-  if (!profile) {
+  if (authLoading || !profile) {
     return (
       <div className="w-full min-h-[60vh] flex items-center justify-center bg-[#F7F7F5]">
-        <p className="text-center text-[#555555] text-xs font-bold tracking-[0.2em] uppercase">Please log in.</p>
+        <p className="text-center text-[#555555] text-xs font-bold tracking-[0.2em] uppercase">Authenticating...</p>
       </div>
     );
   }
