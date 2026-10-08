@@ -23,4 +23,8 @@ router.post('/:itemId/claims', requireAuth, ClaimController.submitClaim);
 router.get('/:itemId/claims', requireAuth, ClaimController.getClaimsForItem);
 router.get('/:itemId/my-claim', requireAuth, ClaimController.getMyClaim);
 
+// Item resolution
+import { HandoffController } from '../controllers/handoff.controller';
+router.patch('/:id/resolve', requireAuth, HandoffController.resolveItem);
+
 export default router;
