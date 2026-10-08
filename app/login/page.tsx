@@ -29,10 +29,10 @@ function LoginContent() {
       await refreshAuth();
       router.push(redirectUrl as string);
     } catch (err: any) {
-      if (err.message === 'Only @vitstudent.ac.in emails are allowed') {
-        setError('Only @vitstudent.ac.in accounts are allowed.');
+      if (err.message) {
+        setError(err.message);
       } else {
-        setError('Sign-in failed. Please use your @vitstudent.ac.in Google account.');
+        setError('Sign-in failed. Please try again.');
       }
     }
   };

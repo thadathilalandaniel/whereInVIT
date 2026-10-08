@@ -10,6 +10,9 @@ import { notFoundHandler } from './middleware/notFound.middleware';
 
 const app: Application = express();
 
+// Trust proxy for secure cookies behind Render/Heroku load balancers
+app.set('trust proxy', 1);
+
 // Security and utility middlewares
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
