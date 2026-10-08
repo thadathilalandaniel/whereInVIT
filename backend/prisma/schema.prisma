@@ -7,6 +7,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  STUDENT
+  ADMIN
+}
+
 enum VenueCategory {
   ACADEMIC_BLOCK
   MENS_HOSTEL
@@ -29,6 +34,7 @@ enum ItemStatus {
   HANDOFF_PENDING
   RETURNED
   RESOLVED
+  REMOVED
 }
 
 enum ClaimStatus {
@@ -60,12 +66,38 @@ enum NotificationType {
   SYSTEM
 }
 
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  DISMISSED
+  ACTION_TAKEN
+}
+
+enum ReportReason {
+  INAPPROPRIATE_CONTENT
+  SPAM
+  MISLEADING_INFORMATION
+  DUPLICATE_LISTING
+  WRONG_CATEGORY
+  WRONG_LOCATION
+  SUSPICIOUS_ACTIVITY
+  OTHER
+}
+
+enum AdminActionType {
+  ITEM_REMOVED
+  ITEM_RESTORED
+  REPORT_REVIEWED
+  USER_ROLE_CHANGED
+}
+
 model Profile {
   id                 String   @id @default(uuid())
   name               String
   registrationNumber String?  @unique
   email              String   @unique
   phone              String?
+  role               UserRole @default(STUDENT)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -74,6 +106,8 @@ model Profile {
   messages      Message[]
   notifications Notification[]
   sessions      Session[]
+  reports       Report[]
+  adminActions  AdminAction[]
 }
 
 model Session {
@@ -135,6 +169,7 @@ model Item {
   claims                Claim[]
   verificationChallenge VerificationChallenge?
   conversations         Conversation[]
+  reports               Report[]
 
   @@index([type])
   @@index([status])
@@ -233,4 +268,40 @@ model Notification {
   @@index([userId])
   @@index([isRead])
   @@index([userId, isRead])
+}
+
+model Report {
+  id          String       @id @default(uuid())
+  reporterId  String
+  itemId      String
+  reason      ReportReason
+  description String
+  status      ReportStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  reporter Profile @relation(fields: [reporterId], references: [id], onDelete: Restrict)
+  item     Item    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([reporterId])
+  @@index([itemId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model AdminAction {
+  id         String          @id @default(uuid())
+  adminId    String
+  action     AdminActionType
+  targetType String
+  targetId   String
+  metadata   String?
+  createdAt  DateTime        @default(now())
+
+  admin Profile @relation(fields: [adminId], references: [id], onDelete: Restrict)
+
+  @@index([adminId])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([createdAt])
 }

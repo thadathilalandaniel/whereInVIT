@@ -37,6 +37,7 @@ export default function ItemDetailsPage() {
   const [showClaimModal, setShowClaimModal] = useState(false);
   const [showChallengeModal, setShowChallengeModal] = useState(false);
   const [showHandoffModal, setShowHandoffModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   
   const [formLoading, setFormLoading] = useState(false);
 
@@ -226,6 +227,27 @@ export default function ItemDetailsPage() {
     } catch (err: any) { alert(err.message || 'Failed to resolve item'); }
   };
 
+  const handleReportItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const reason = (form.elements.namedItem('reason') as HTMLSelectElement).value;
+    const description = (form.elements.namedItem('description') as HTMLInputElement).value;
+    
+    try {
+      setFormLoading(true);
+      await fetchApi(`/items/${id}/report`, {
+        method: 'POST',
+        body: JSON.stringify({ reason, description })
+      });
+      setShowReportModal(false);
+      alert('Report submitted successfully.');
+    } catch (err: any) {
+      alert(err.message || 'Failed to report item');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
   if (loading) return <div className="flex justify-center items-center min-h-[60vh] text-[#555555] text-xs font-bold tracking-[0.2em] uppercase">Loading...</div>;
   if (error || !item) return <div className="text-center py-20 text-[#111111] font-bold uppercase tracking-widest">{error || 'Item not found'}</div>;
   
@@ -251,9 +273,19 @@ export default function ItemDetailsPage() {
                 <p className="text-[#555555] text-xs font-bold tracking-[0.2em] mb-2 uppercase">{item.type} ITEM</p>
                 <h1 className="text-3xl md:text-5xl font-extrabold text-[#111111] tracking-tight">{item.title}</h1>
               </div>
-              <span className={`px-4 py-2 text-xs font-bold tracking-[0.2em] uppercase border ${item.status === 'ACTIVE' ? 'bg-[#111111] text-white border-[#111111]' : 'bg-[#F7F7F5] text-[#555555] border-[#E5E5E5]'}`}>
-                {item.status}
-              </span>
+              <div className="flex flex-col items-end gap-2">
+                <span className={`px-4 py-2 text-xs font-bold tracking-[0.2em] uppercase border ${item.status === 'ACTIVE' ? 'bg-[#111111] text-white border-[#111111]' : 'bg-[#F7F7F5] text-[#555555] border-[#E5E5E5]'}`}>
+                  {item.status}
+                </span>
+                {profile && profile.id !== item.reporter?.id && (
+                  <button 
+                    onClick={() => setShowReportModal(true)} 
+                    className="text-[10px] font-bold tracking-widest text-[#555555] hover:text-red-600 transition-colors uppercase mt-2"
+                  >
+                    Report Item
+                  </button>
+                )}
+              </div>
             </div>
             
             {/* PROMINENT CLAIM ACTION BLOCK */}
@@ -531,6 +563,40 @@ export default function ItemDetailsPage() {
               <div className="flex gap-4 pt-4 border-t border-[#E5E5E5]">
                 <Button type="submit" disabled={formLoading} className="flex-1">{formLoading ? 'Scheduling...' : 'Schedule'}</Button>
                 <Button type="button" variant="secondary" onClick={() => setShowHandoffModal(false)} className="flex-1">Cancel</Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* REPORT MODAL */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white max-w-md w-full p-8 border border-[#E5E5E5] shadow-2xl">
+            <h2 className="text-xl font-bold text-[#111111] uppercase tracking-tight mb-6">Report Item</h2>
+            <form onSubmit={handleReportItem} className="space-y-6">
+              <div>
+                <label className="block text-[10px] font-bold tracking-[0.2em] text-[#555555] uppercase mb-2">Reason</label>
+                <select name="reason" required className="w-full border border-[#E5E5E5] px-4 py-3 text-sm focus:outline-none focus:border-[#111111] text-[#111111]">
+                  <option value="INAPPROPRIATE_CONTENT">Inappropriate Content</option>
+                  <option value="SPAM">Spam</option>
+                  <option value="MISLEADING_INFORMATION">Misleading Information</option>
+                  <option value="DUPLICATE_LISTING">Duplicate Listing</option>
+                  <option value="WRONG_CATEGORY">Wrong Category</option>
+                  <option value="WRONG_LOCATION">Wrong Location</option>
+                  <option value="SUSPICIOUS_ACTIVITY">Suspicious Activity</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold tracking-[0.2em] text-[#555555] uppercase mb-2">Description</label>
+                <textarea name="description" required minLength={10} maxLength={500} rows={4}
+                  className="w-full border border-[#E5E5E5] px-4 py-3 text-sm focus:outline-none focus:border-[#111111] text-[#111111] resize-none"
+                  placeholder="Please describe why you are reporting this item..."></textarea>
+              </div>
+              <div className="flex gap-4 pt-4 border-t border-[#E5E5E5]">
+                <Button type="submit" disabled={formLoading} className="flex-1">{formLoading ? 'Submitting...' : 'Submit Report'}</Button>
+                <Button type="button" variant="secondary" onClick={() => setShowReportModal(false)} className="flex-1">Cancel</Button>
               </div>
             </form>
           </div>
