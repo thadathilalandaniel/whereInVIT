@@ -1,13 +1,16 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { fetchApi } from '../lib/api';
+import { fetchApi, getImageUrl } from '../lib/api';
+import { useAuth } from './AuthProvider';
+import { TypeSelector } from './TypeSelector';
 
 export function ItemForm({ initialData, isEdit }: { initialData?: any; isEdit?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryType = searchParams.get('type');
   const defaultType = queryType === 'FOUND' ? 'FOUND' : 'LOST';
+  const { profile, loading: authLoading } = useAuth();
 
   const [categories, setCategories] = useState<any[]>([]);
   const [venues, setVenues] = useState<any[]>([]);
@@ -19,11 +22,17 @@ export function ItemForm({ initialData, isEdit }: { initialData?: any; isEdit?: 
   const [description, setDescription] = useState(initialData?.description || '');
   
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(initialData?.imageUrl || null);
+  const [imagePreview, setImagePreview] = useState<string | null>(initialData?.imageUrl ? getImageUrl(initialData.imageUrl) : null);
   const [removeImage, setRemoveImage] = useState(false); // track if the user wants to remove an existing image
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isEdit && (queryType === 'LOST' || queryType === 'FOUND')) {
+      setType(queryType);
+    }
+  }, [queryType, isEdit]);
 
   useEffect(() => {
     const extractArray = (res: any) => {
@@ -105,6 +114,20 @@ export function ItemForm({ initialData, isEdit }: { initialData?: any; isEdit?: 
     }
   };
 
+  useEffect(() => {
+    if (!authLoading && !profile) {
+      if (isEdit && initialData?.id) {
+        router.push(`/login?next=/items/${initialData.id}/edit`);
+      } else {
+        router.push(`/login?next=/items/new?type=${type}`);
+      }
+    }
+  }, [authLoading, profile, router, type, isEdit, initialData]);
+
+  if (authLoading || !profile) {
+    return <div className="p-20 text-center uppercase tracking-widest text-xs font-bold text-[#555555]">Authenticating...</div>;
+  }
+
   return (
     <form onSubmit={handleSubmit} className="max-w-3xl mx-auto bg-white p-10 md:p-14 border border-[#E5E5E5] mt-12 mb-20 shadow-sm">
       <h1 className="text-3xl font-extrabold mb-8 text-[#111111] uppercase tracking-tight">{isEdit ? 'Edit Item' : 'Report an Item'}</h1>
@@ -119,16 +142,15 @@ export function ItemForm({ initialData, isEdit }: { initialData?: any; isEdit?: 
         {!isEdit && (
           <div className="pb-8 border-b border-[#E5E5E5]">
             <label className="block text-[10px] font-bold tracking-[0.2em] text-[#555555] uppercase mb-4">I have...</label>
-            <div className="flex gap-4">
-              <label className={`flex-1 flex items-center justify-center p-4 border transition-colors cursor-pointer ${type === 'LOST' ? 'bg-[#111111] text-white border-[#111111]' : 'bg-white text-[#555555] border-[#E5E5E5] hover:border-[#111111]'}`}>
-                <input type="radio" checked={type === 'LOST'} onChange={() => setType('LOST')} className="hidden" />
-                <span className="text-xs font-bold tracking-[0.2em] uppercase">Lost an item</span>
-              </label>
-              <label className={`flex-1 flex items-center justify-center p-4 border transition-colors cursor-pointer ${type === 'FOUND' ? 'bg-[#111111] text-white border-[#111111]' : 'bg-white text-[#555555] border-[#E5E5E5] hover:border-[#111111]'}`}>
-                <input type="radio" checked={type === 'FOUND'} onChange={() => setType('FOUND')} className="hidden" />
-                <span className="text-xs font-bold tracking-[0.2em] uppercase">Found an item</span>
-              </label>
-            </div>
+            <TypeSelector 
+              type={type as 'LOST' | 'FOUND'} 
+              onChange={(t) => {
+                setType(t);
+                router.replace(`/items/new?type=${t}`, { scroll: false });
+              }} 
+              lostLabel="LOST AN ITEM" 
+              foundLabel="FOUND AN ITEM" 
+            />
           </div>
         )}
 

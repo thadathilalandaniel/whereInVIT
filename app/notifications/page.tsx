@@ -48,7 +48,7 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     if (!authLoading && !profile) {
-      router.push('/');
+      router.push('/login?next=/notifications');
     }
   }, [authLoading, profile, router]);
 

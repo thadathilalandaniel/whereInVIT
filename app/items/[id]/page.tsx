@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { fetchApi } from '../../../lib/api';
+import { fetchApi, getImageUrl } from '../../../lib/api';
 import { useAuth } from '../../../components/AuthProvider';
 import Link from 'next/link';
 
@@ -96,7 +96,11 @@ export default function ItemDetailsPage() {
     if (!confirm('Are you sure you want to delete this listing permanently?')) return;
     try {
       await fetchApi(`/items/${id}`, { method: 'DELETE' });
-      router.push('/');
+      if (item?.type === 'FOUND') {
+        router.push('/found');
+      } else {
+        router.push('/lost');
+      }
     } catch (err: any) { alert(err.message || 'Failed to delete item'); }
   };
 
@@ -264,7 +268,7 @@ export default function ItemDetailsPage() {
         <div className="bg-white border border-[#E5E5E5] overflow-hidden shadow-sm">
           {item.imageUrl && (
             <div className="w-full h-80 bg-[#E5E5E5]">
-              <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+              <img src={getImageUrl(item.imageUrl) || ''} alt={item.title} className="w-full h-full object-cover" />
             </div>
           )}
           <div className="p-8 md:p-12">
@@ -277,9 +281,15 @@ export default function ItemDetailsPage() {
                 <span className={`px-4 py-2 text-xs font-bold tracking-[0.2em] uppercase border ${item.status === 'ACTIVE' ? 'bg-[#111111] text-white border-[#111111]' : 'bg-[#F7F7F5] text-[#555555] border-[#E5E5E5]'}`}>
                   {item.status}
                 </span>
-                {profile && profile.id !== item.reporter?.id && (
+                {(!profile || profile.id !== item.reporter?.id) && (
                   <button 
-                    onClick={() => setShowReportModal(true)} 
+                    onClick={() => {
+                      if (!profile) {
+                        router.push(`/login?next=/items/${id}`);
+                      } else {
+                        setShowReportModal(true);
+                      }
+                    }} 
                     className="text-[10px] font-bold tracking-widest text-[#555555] hover:text-red-600 transition-colors uppercase mt-2"
                   >
                     Report Item
@@ -323,7 +333,10 @@ export default function ItemDetailsPage() {
                         <p className="text-sm text-[#555555]">Submit a claim to prove ownership of this item.</p>
                       </div>
                       <Button className="w-full sm:w-auto py-4 px-8 text-sm" onClick={() => {
-                        if (!profile) return alert('Please login first to claim items.');
+                        if (!profile) {
+                          router.push(`/login?next=/items/${id}`);
+                          return;
+                        }
                         if (!challenge) return alert('No verification challenge is set for this item yet. Please wait for the finder to set one.');
                         setShowClaimModal(true);
                       }}>CLAIM THIS ITEM</Button>

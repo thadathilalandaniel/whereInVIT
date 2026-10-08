@@ -32,6 +32,7 @@ function ItemCard({ item }: { item: any }) {
 }
 
 export default function Home() {
+  const { profile } = useAuth();
   const [lostItems, setLostItems] = useState([]);
   const [foundItems, setFoundItems] = useState([]);
 
@@ -64,10 +65,10 @@ export default function Home() {
           </p>
           
           <div className="flex flex-col sm:flex-row items-center gap-6 w-full sm:w-auto">
-            <Link href="/items/new?type=LOST" className="w-full sm:w-auto bg-[#111111] text-white px-10 py-5 text-xs font-bold tracking-[0.2em] uppercase hover:bg-[#333333] transition-colors border border-[#111111]">
+            <Link href={profile ? "/items/new?type=LOST" : "/login?next=/items/new?type=LOST"} className="w-full sm:w-auto bg-[#111111] text-white px-10 py-5 text-xs font-bold tracking-[0.2em] uppercase hover:bg-[#333333] transition-colors border border-[#111111]">
               REPORT LOST ITEM
             </Link>
-            <Link href="/items/new?type=FOUND" className="w-full sm:w-auto bg-white text-[#111111] px-10 py-5 text-xs font-bold tracking-[0.2em] uppercase hover:bg-[#F7F7F5] transition-colors border border-[#E5E5E5] hover:border-[#111111]">
+            <Link href={profile ? "/items/new?type=FOUND" : "/login?next=/items/new?type=FOUND"} className="w-full sm:w-auto bg-white text-[#111111] px-10 py-5 text-xs font-bold tracking-[0.2em] uppercase hover:bg-[#F7F7F5] transition-colors border border-[#E5E5E5] hover:border-[#111111]">
               REPORT FOUND ITEM
             </Link>
           </div>
@@ -187,7 +188,7 @@ export default function Home() {
           <div className="flex-1 text-left">
             <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-6">LOST SOMETHING?</h2>
             <p className="text-white/60 mb-12 text-lg md:text-xl font-light">Report it so the community can help you find it.</p>
-            <Link href="/items/new?type=LOST" className="inline-block bg-white text-[#111111] px-10 py-5 text-sm font-bold tracking-[0.2em] uppercase hover:bg-[#F7F7F5] hover:scale-105 transition-all shadow-[0_0_40px_rgba(255,255,255,0.1)]">
+            <Link href={profile ? "/items/new?type=LOST" : "/login?next=/items/new?type=LOST"} className="inline-block bg-white text-[#111111] px-10 py-5 text-sm font-bold tracking-[0.2em] uppercase hover:bg-[#F7F7F5] hover:scale-105 transition-all shadow-[0_0_40px_rgba(255,255,255,0.1)]">
               Report Lost Item
             </Link>
           </div>
@@ -197,7 +198,7 @@ export default function Home() {
           <div className="flex-1 text-left md:pl-12">
             <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-6">FOUND SOMETHING?</h2>
             <p className="text-white/60 mb-12 text-lg md:text-xl font-light">Help return it to its rightful owner securely.</p>
-            <Link href="/items/new?type=FOUND" className="inline-block bg-white text-[#111111] px-10 py-5 text-sm font-bold tracking-[0.2em] uppercase hover:bg-[#F7F7F5] hover:scale-105 transition-all shadow-[0_0_40px_rgba(255,255,255,0.1)]">
+            <Link href={profile ? "/items/new?type=FOUND" : "/login?next=/items/new?type=FOUND"} className="inline-block bg-white text-[#111111] px-10 py-5 text-sm font-bold tracking-[0.2em] uppercase hover:bg-[#F7F7F5] hover:scale-105 transition-all shadow-[0_0_40px_rgba(255,255,255,0.1)]">
               Report Found Item
             </Link>
           </div>

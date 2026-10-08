@@ -177,20 +177,14 @@ export class ItemService {
       throw new Error('Cannot delete an item that is in progress');
     }
 
-    // Since we don't want to physically delete records that might have relations
-    // or we can soft-delete by setting status = RESOLVED or returning a safe delete.
-    // Given the instructions: "Prefer a safe status transition or soft-delete strategy if appropriate."
-    // Let's actually delete if there are no claims, or just transition to RESOLVED.
-    // If it's active, there are probably no claims yet, but let's just physically delete if active.
-
     const claimsCount = await prisma.claim.count({ where: { itemId: id } });
     if (claimsCount > 0) {
-      // Soft delete
-      return prisma.item.update({
-        where: { id },
-        data: { status: ItemStatus.RESOLVED }
-      });
+      throw new Error('This item cannot be deleted because it has an active claim.');
     }
+
+    // Delete dependent records first to satisfy Restrict constraints
+    await prisma.verificationChallenge.deleteMany({ where: { itemId: id } });
+    await prisma.report.deleteMany({ where: { itemId: id } });
 
     return prisma.item.delete({
       where: { id }

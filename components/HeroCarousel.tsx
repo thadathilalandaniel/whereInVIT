@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { fetchApi } from '../lib/api';
+import { fetchApi, getImageUrl } from '../lib/api';
 
 const fallbackImages = [
   {
@@ -65,6 +65,32 @@ const fallbackImages = [
     title: ["APPLE", "EARPODS"]
   }
 ];
+const categoryFallbackMap: Record<string, string> = {
+  'ID & Access Cards': 'https://images.unsplash.com/photo-1589828131808-115acbd7f461?w=600&h=400&fit=crop&q=80',
+  'Keys': 'https://images.unsplash.com/photo-1506804886640-20a271708892?w=600&h=400&fit=crop&q=80',
+  'Wallets & Card Holders': 'https://images.unsplash.com/photo-1627123424574-724758594e93?w=600&h=400&fit=crop&q=80',
+  'Smartphones': 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&h=400&fit=crop&q=80',
+  'Books': 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=600&h=400&fit=crop&q=80',
+  'Bags & Backpacks': 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&h=400&fit=crop&q=80',
+  'Earphones & Headphones': '/images/carousel/media_1791307310818.jpg',
+  'Chargers & Cables': '/images/carousel/media_1791308466334.jpg',
+  'Calculators': '/images/carousel/media_1791307329436.png',
+  'Laptops & Tablets': 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&h=400&fit=crop&q=80',
+  'Water Bottles & Flasks': '/images/carousel/media_1791308466342.jpg',
+  'Spectacles': 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=600&h=400&fit=crop&q=80',
+  'Stationery': '/images/carousel/media_1791307320445.jpg',
+  'USB & Storage Devices': 'https://images.unsplash.com/photo-1622434641406-a158123450f9?w=600&h=400&fit=crop&q=80',
+  'Clothing': 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=600&h=400&fit=crop&q=80',
+  'Sports Equipment': 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=600&h=400&fit=crop&q=80',
+  'Jewellery & Accessories': '/images/carousel/media_1791307338815.jpg',
+  'Umbrellas': 'https://images.unsplash.com/photo-1559239855-3f309a6fc4ba?w=600&h=400&fit=crop&q=80',
+  'Footwear': 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&h=400&fit=crop&q=80',
+};
+
+const getFallbackImageForCategory = (categoryName?: string) => {
+  if (!categoryName) return 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=600&h=400&fit=crop&q=80';
+  return categoryFallbackMap[categoryName] || 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=600&h=400&fit=crop&q=80';
+};
 
 export function HeroCarousel() {
   const [carouselSlides, setCarouselSlides] = useState<any[]>(fallbackImages);
@@ -102,7 +128,16 @@ export function HeroCarousel() {
           return;
         }
 
-        const mappedSlides = items.map((item: any, idx: number) => {
+        const uniqueItems = [];
+        const seenIds = new Set();
+        for (const item of items) {
+          if (!seenIds.has(item.id)) {
+            seenIds.add(item.id);
+            uniqueItems.push(item);
+          }
+        }
+
+        const mappedSlides = uniqueItems.map((item: any, idx: number) => {
           let titleStr = item.title || 'ITEM';
           let titleParts = titleStr.trim().toUpperCase().split(' ');
           let part1 = titleParts[0] || '';
@@ -114,11 +149,15 @@ export function HeroCarousel() {
           }
           if (part1.length > 18) part1 = part1.substring(0, 18);
           if (part2.length > 25) part2 = part2.substring(0, 25) + '...';
+          
+          // Get correct fallback based on category
+          const categoryName = item.category?.name || '';
+          const categoryFallback = getFallbackImageForCategory(categoryName);
 
           return {
-            id: item.id || `dyn-${idx}`,
-            image: item.imageUrl || null,
-            fallbackImage: fallbackImages[idx % fallbackImages.length].image,
+            id: item.id,
+            image: getImageUrl(item.imageUrl) || null,
+            fallbackImage: categoryFallback,
             label: item.type === 'LOST' ? 'LOST ITEM' : 'FOUND ITEM',
             title: [part1, part2].filter(Boolean),
             originalItem: item
@@ -139,6 +178,7 @@ export function HeroCarousel() {
           let fallbackIndex = 0;
           while (finalSlides.length < 8) {
             const fallback = fallbackImages[fallbackIndex % fallbackImages.length];
+            // Only add fallback padding if it's not a duplicate of an existing item
             finalSlides.push({
               ...fallback,
               id: `fallback-pad-${fallbackIndex}`
