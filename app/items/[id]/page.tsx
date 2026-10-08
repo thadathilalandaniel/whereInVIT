@@ -28,12 +28,15 @@ export default function ItemDetailsPage() {
   const [challenge, setChallenge] = useState<any>(null);
   const [claims, setClaims] = useState<any[]>([]);
   const [myClaim, setMyClaim] = useState<any>(null);
+  const [approvedClaim, setApprovedClaim] = useState<any>(null);
+  const [handoff, setHandoff] = useState<any>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [showClaimModal, setShowClaimModal] = useState(false);
   const [showChallengeModal, setShowChallengeModal] = useState(false);
+  const [showHandoffModal, setShowHandoffModal] = useState(false);
   
   const [formLoading, setFormLoading] = useState(false);
 
@@ -55,11 +58,25 @@ export default function ItemDetailsPage() {
           try {
             const cl = await fetchApi(`/items/${id}/claims`);
             setClaims(cl);
+            const approved = cl.find((c: any) => c.status === 'APPROVED');
+            if (approved) {
+              setApprovedClaim(approved);
+              try {
+                const h = await fetchApi(`/claims/${approved.id}/handoff`);
+                setHandoff(h);
+              } catch (e) {}
+            }
           } catch (e) {}
         } else if (profile) {
           try {
             const mc = await fetchApi(`/items/${id}/my-claim`);
             setMyClaim(mc);
+            if (mc && mc.status === 'APPROVED') {
+              try {
+                const h = await fetchApi(`/claims/${mc.id}/handoff`);
+                setHandoff(h);
+              } catch (e) {}
+            }
           } catch (e) {}
         }
       }
@@ -153,11 +170,69 @@ export default function ItemDetailsPage() {
     }
   };
 
+  const handleScheduleHandoff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const checkpoint = (form.elements.namedItem('checkpoint') as HTMLSelectElement).value;
+    const handoffDate = (form.elements.namedItem('handoffDate') as HTMLInputElement).value;
+    const handoffTime = (form.elements.namedItem('handoffTime') as HTMLInputElement).value;
+    
+    const claimId = isOwner ? approvedClaim?.id : myClaim?.id;
+    
+    try {
+      setFormLoading(true);
+      await fetchApi(`/claims/${claimId}/handoff`, {
+        method: 'POST',
+        body: JSON.stringify({ checkpoint, handoffDate, handoffTime })
+      });
+      setShowHandoffModal(false);
+      loadData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to schedule handoff');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleConfirmHandoff = async () => {
+    if (!confirm('Confirm this handoff?')) return;
+    try {
+      await fetchApi(`/handoffs/${handoff.id}/confirm`, { method: 'PATCH' });
+      loadData();
+    } catch (err: any) { alert(err.message || 'Failed to confirm handoff'); }
+  };
+
+  const handleCompleteHandoff = async () => {
+    if (!confirm('Mark handoff as completed? Ensure the item has been physically returned.')) return;
+    try {
+      await fetchApi(`/handoffs/${handoff.id}/complete`, { method: 'PATCH' });
+      loadData();
+    } catch (err: any) { alert(err.message || 'Failed to complete handoff'); }
+  };
+
+  const handleCancelHandoff = async () => {
+    if (!confirm('Cancel this handoff?')) return;
+    try {
+      await fetchApi(`/handoffs/${handoff.id}/cancel`, { method: 'PATCH' });
+      loadData();
+    } catch (err: any) { alert(err.message || 'Failed to cancel handoff'); }
+  };
+
+  const handleResolveItem = async () => {
+    if (!confirm('Mark this item as fully resolved? It will no longer be visible in feeds.')) return;
+    try {
+      await fetchApi(`/items/${id}/resolve`, { method: 'PATCH' });
+      loadData();
+    } catch (err: any) { alert(err.message || 'Failed to resolve item'); }
+  };
+
   if (loading) return <div className="flex justify-center items-center min-h-[60vh] text-[#555555] text-xs font-bold tracking-[0.2em] uppercase">Loading...</div>;
   if (error || !item) return <div className="text-center py-20 text-[#111111] font-bold uppercase tracking-widest">{error || 'Item not found'}</div>;
   
   const isOwner = profile?.id === item.reporter?.id;
   const isResolvedOrClaimed = ['CLAIMED', 'RETURNED', 'RESOLVED'].includes(item.status);
+  const hasApprovedClaim = isOwner ? !!approvedClaim : (myClaim?.status === 'APPROVED');
+  const currentClaim = isOwner ? approvedClaim : myClaim;
 
   return (
     <div className="w-full min-h-screen bg-[#F7F7F5] selection:bg-[#111111] selection:text-white py-12 md:py-24 px-6">
@@ -230,6 +305,49 @@ export default function ItemDetailsPage() {
                     ) : (
                       <a href="#manage-claims" className="inline-block px-6 py-3 text-xs font-bold tracking-[0.2em] uppercase transition-colors border text-center bg-[#111111] text-white border-[#111111] hover:bg-[#333333]">View Claims</a>
                     )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* HANDOFF SECTION */}
+            {hasApprovedClaim && (
+              <div className="mb-10 p-6 md:p-8 bg-[#F7F7F5] border border-[#111111]">
+                <h3 className="text-xl font-bold text-[#111111] uppercase tracking-tight mb-4">Handoff & Return</h3>
+                {!handoff || handoff.status === 'CANCELLED' ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-[#555555]">No active handoff scheduled. Please schedule a handoff at an approved checkpoint.</p>
+                    {item.status !== 'RESOLVED' && <Button onClick={() => setShowHandoffModal(true)}>Schedule Handoff</Button>}
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div><p className="text-[10px] font-bold tracking-[0.2em] text-[#555555] uppercase">Status</p><p className="font-bold text-[#111111]">{handoff.status}</p></div>
+                      <div><p className="text-[10px] font-bold tracking-[0.2em] text-[#555555] uppercase">Checkpoint</p><p className="font-bold text-[#111111]">{handoff.checkpoint.replace(/_/g, ' ')}</p></div>
+                      <div><p className="text-[10px] font-bold tracking-[0.2em] text-[#555555] uppercase">Date</p><p className="font-bold text-[#111111]">{new Date(handoff.handoffDate).toLocaleDateString()}</p></div>
+                      <div><p className="text-[10px] font-bold tracking-[0.2em] text-[#555555] uppercase">Time</p><p className="font-bold text-[#111111]">{handoff.handoffTime}</p></div>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-4 pt-4 border-t border-[#E5E5E5]">
+                      {handoff.status === 'PENDING' && (
+                        <>
+                          <Button onClick={handleConfirmHandoff}>Confirm Handoff</Button>
+                          <Button variant="danger" onClick={handleCancelHandoff}>Cancel Handoff</Button>
+                        </>
+                      )}
+                      {handoff.status === 'CONFIRMED' && (
+                        <>
+                          <Button onClick={handleCompleteHandoff}>Mark Completed</Button>
+                          <Button variant="danger" onClick={handleCancelHandoff}>Cancel Handoff</Button>
+                        </>
+                      )}
+                      {handoff.status === 'COMPLETED' && item.status === 'RETURNED' && (
+                        <Button onClick={handleResolveItem}>Mark Item Resolved</Button>
+                      )}
+                      {item.status === 'RESOLVED' && (
+                        <p className="text-sm font-bold text-[#111111] uppercase tracking-[0.1em]">Process Complete</p>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -371,6 +489,38 @@ export default function ItemDetailsPage() {
               <div className="flex gap-4 pt-6 border-t border-[#E5E5E5]">
                 <Button type="submit" disabled={formLoading} className="flex-1">{formLoading ? 'Submitting...' : 'Submit Claim'}</Button>
                 <Button type="button" variant="secondary" onClick={() => setShowClaimModal(false)} className="flex-1">Cancel</Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* HANDOFF MODAL */}
+      {showHandoffModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white max-w-md w-full p-8 border border-[#E5E5E5] shadow-2xl">
+            <h2 className="text-xl font-bold text-[#111111] uppercase tracking-tight mb-6">Schedule Handoff</h2>
+            <form onSubmit={handleScheduleHandoff} className="space-y-6">
+              <div>
+                <label className="block text-[10px] font-bold tracking-[0.2em] text-[#555555] uppercase mb-2">Checkpoint</label>
+                <select name="checkpoint" required className="w-full border border-[#E5E5E5] px-4 py-3 text-sm focus:outline-none focus:border-[#111111] text-[#111111]">
+                  <option value="SJT_GROUND_FLOOR_RECEPTION">SJT Ground Floor Reception</option>
+                  <option value="CENTRAL_LIBRARY_SECURITY_DESK">Central Library Security Desk</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold tracking-[0.2em] text-[#555555] uppercase mb-2">Date</label>
+                <input type="date" name="handoffDate" required min={new Date().toISOString().split('T')[0]}
+                  className="w-full border border-[#E5E5E5] px-4 py-3 text-sm focus:outline-none focus:border-[#111111] text-[#111111]" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold tracking-[0.2em] text-[#555555] uppercase mb-2">Time</label>
+                <input type="time" name="handoffTime" required
+                  className="w-full border border-[#E5E5E5] px-4 py-3 text-sm focus:outline-none focus:border-[#111111] text-[#111111]" />
+              </div>
+              <div className="flex gap-4 pt-4 border-t border-[#E5E5E5]">
+                <Button type="submit" disabled={formLoading} className="flex-1">{formLoading ? 'Scheduling...' : 'Schedule'}</Button>
+                <Button type="button" variant="secondary" onClick={() => setShowHandoffModal(false)} className="flex-1">Cancel</Button>
               </div>
             </form>
           </div>
