@@ -9,7 +9,7 @@ const startServer = async () => {
     console.log('Connected to PostgreSQL database');
 
     const port = env.PORT;
-    app.listen(Number(port), '127.0.0.1', () => {
+    app.listen(Number(port), '0.0.0.0', () => {
       console.log(`Server is running on port ${port} in ${env.NODE_ENV} mode`);
     }).on('error', (err) => {
       console.error('Express server error:', err);
